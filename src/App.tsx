@@ -15,6 +15,7 @@ import AccountPage from './pages/AccountPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
 import AboutPage from './pages/AboutPage';
 import LoginPage from './pages/LoginPage';
+import OrdersPage from './pages/OrdersPage';
 
 export default function App() {
   return (
@@ -39,7 +40,8 @@ export default function App() {
               {/* Pages below require sign-in */}
               <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
               <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
-              <Route path="/account/orders/:id" element={<ProtectedRoute><OrderDetailsPage /></ProtectedRoute>} />
+              <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+              <Route path="/orders/:id" element={<ProtectedRoute><OrderDetailsPage /></ProtectedRoute>} />
               <Route path="/about" element={<AboutPage />} />
             </Routes>
           </div>

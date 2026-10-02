@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Package } from 'lucide-react';
 import { useAuth } from '../features/auth/AuthContext';
+import OrderList from '../features/orders/OrderList';
 
 export default function AccountPage() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export default function AccountPage() {
 
               <nav className="flex flex-col gap-2">
                 <Link
-                  to="/account"
+                  to="/orders"
                   className="flex items-center gap-2 p-2 rounded-lg no-underline font-medium"
                   style={{ backgroundColor: 'var(--color-blush)', color: 'var(--color-primary)' }}
                 >
@@ -69,14 +70,7 @@ export default function AccountPage() {
                 Order History
               </h2>
 
-              {/* Real orders are loaded from Supabase in Phase 5 */}
-              <div className="text-center py-10">
-                <Package size={48} className="mx-auto mb-4" style={{ color: 'var(--color-border)' }} />
-                <p className="mb-4" style={{ color: 'var(--color-charcoal)' }}>You haven't placed any orders yet.</p>
-                <Link to="/shop" className="btn btn-primary no-underline">
-                  Start Shopping
-                </Link>
-              </div>
+              <OrderList />
             </div>
           </div>
         </div>

@@ -37,6 +37,7 @@ supabase/       SQL run manually in the Supabase SQL Editor
   schema.sql    tables, enums, triggers, seed data
   policies.sql  RLS for categories/products + re-seed
   auth.sql      profiles trigger + RLS for profiles/orders/order_items/payments
+  orders.sql    create_order() + get_shipping_fee() + order number sequence
 ```
 
 ## Coding Conventions
@@ -73,9 +74,8 @@ supabase/       SQL run manually in the Supabase SQL Editor
 See `PROJECT_CONTEXT.md` for the detailed, up-to-date status.
 - **Completed:** Phase 1 (Planning, partial — no PRD.md), Phase 2 (UI), Phase 3 (Database, products/categories live).
 - **Completed:** Phase 4 (Authentication, Google sign-in tested manually).
-- **Next:** Phase 5 (Orders).
+- **Completed:** Phase 5 (Orders) — orders are created ONLY via the `create_order()` Postgres function (supabase/orders.sql).
+- **Next:** Phase 6 (Mailgun).
 
 ## Known Issues
 - `PRD.md` was never created. `README.md` is still the Vite template.
-- Checkout is still a mock (client-generated order number, nothing saved) until Phase 5.
-- Routes use `/account/orders/:id`; the brief asks for `/orders` and `/orders/:id`.

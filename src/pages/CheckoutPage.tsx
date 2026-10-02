@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, CreditCard, Phone } from 'lucide-react';
 import { useCart } from '../features/cart/CartContext';
 import { useAuth } from '../features/auth/AuthContext';
+import { createOrder, SHIPPING_FEE, type CreatedOrder } from '../services/orders';
 import { formatCurrency } from '../utils/formatCurrency';
 import type { CheckoutFormData } from '../types';
 
@@ -10,8 +11,9 @@ export default function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart();
   const navigate = useNavigate();
   const { user } = useAuth(); // Checkout is a protected route, so user is signed in
-  const [orderPlaced, setOrderPlaced] = useState(false);
-  const [orderNumber, setOrderNumber] = useState('');
+  const [placedOrder, setPlacedOrder] = useState<CreatedOrder | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState<CheckoutFormData>({
@@ -25,7 +27,8 @@ export default function CheckoutPage() {
     payment_method: 'mpesa',
   });
 
-  const shippingFee = 300;
+  // Estimate for display only — the database calculates the real total
+  const shippingFee = SHIPPING_FEE;
   const total = subtotal + shippingFee;
 
   function updateField(field: keyof CheckoutFormData, value: string) {
@@ -45,29 +48,35 @@ export default function CheckoutPage() {
     if (!form.customer_name.trim()) newErrors.customer_name = 'Name is required';
     if (!form.customer_email.trim() || !form.customer_email.includes('@'))
       newErrors.customer_email = 'Valid email is required';
-    if (!form.customer_phone.trim()) newErrors.customer_phone = 'Phone number is required';
+    if (!/^\+?[0-9 ]{9,20}$/.test(form.customer_phone.trim()))
+      newErrors.customer_phone = 'Valid phone number is required (e.g. 0712 345 678)';
     if (!form.shipping_address.trim()) newErrors.shipping_address = 'Address is required';
     if (!form.city.trim()) newErrors.city = 'City is required';
+    if (!form.country.trim()) newErrors.country = 'Country is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!validate()) return;
+    if (submitting || !validate()) return;
 
-    // Generate order number (will be done server-side in Phase 5)
-    const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-    const seq = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
-    const generatedOrderNumber = `MM-${dateStr}-${seq}`;
+    setSubmitting(true);
+    setSubmitError(null);
+    const { order, error } = await createOrder(items, form);
+    setSubmitting(false);
 
-    setOrderNumber(generatedOrderNumber);
-    setOrderPlaced(true);
+    if (error || !order) {
+      setSubmitError(error);
+      return;
+    }
+
+    // Order is saved in Supabase — now it's safe to empty the cart
+    setPlacedOrder(order);
     clearCart();
   }
 
-  if (items.length === 0 && !orderPlaced) {
+  if (items.length === 0 && !placedOrder) {
     return (
       <main className="container py-16 text-center">
         <h1 className="mb-2" style={{ color: 'var(--color-primary)' }}>Nothing to Checkout</h1>
@@ -80,7 +89,7 @@ export default function CheckoutPage() {
   }
 
   // Order confirmation
-  if (orderPlaced) {
+  if (placedOrder) {
     return (
       <main className="container py-16 text-center max-w-lg mx-auto animate-fade-in">
         <CheckCircle size={64} className="mx-auto mb-4" style={{ color: 'var(--color-sage)' }} />
@@ -88,17 +97,20 @@ export default function CheckoutPage() {
           Thank You for Your Order!
         </h1>
         <p className="mb-1 text-lg font-semibold" style={{ color: 'var(--color-charcoal)' }}>
-          Order {orderNumber}
+          Order {placedOrder.order_number}
+        </p>
+        <p className="mb-1" style={{ color: 'var(--color-charcoal)' }}>
+          Total: <strong>{formatCurrency(placedOrder.total)}</strong>
         </p>
         <p className="mb-6" style={{ color: 'var(--color-muted)' }}>
-          We've received your order. A confirmation email will be sent to {form.customer_email}.
+          Your order has been saved. Payment status: awaiting payment.
         </p>
         <p className="text-sm italic mb-8" style={{ color: 'var(--color-secondary)' }}>
           Thank you for choosing to slow down, create, and reconnect.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button onClick={() => navigate('/account')} className="btn btn-primary">
-            View My Orders
+          <button onClick={() => navigate(`/orders/${placedOrder.id}`)} className="btn btn-primary">
+            View Order
           </button>
           <Link to="/shop" className="btn btn-outline no-underline">
             Continue Shopping
@@ -213,10 +225,13 @@ export default function CheckoutPage() {
                     <label htmlFor="country">Country</label>
                     <input
                       id="country"
-                      className="input"
+                      className={`input ${errors.country ? 'input-error' : ''}`}
                       value={form.country}
                       onChange={(e) => updateField('country', e.target.value)}
                     />
+                    {errors.country && (
+                      <p className="text-xs mt-1" style={{ color: 'var(--color-error)' }}>{errors.country}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -307,8 +322,18 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                <button type="submit" className="btn btn-primary w-full mt-6">
-                  Place Order — {formatCurrency(total)}
+                {submitError && (
+                  <p
+                    role="alert"
+                    className="mt-6 p-3 rounded-lg text-sm"
+                    style={{ backgroundColor: 'var(--color-error-light)', color: 'var(--color-error)' }}
+                  >
+                    {submitError}
+                  </p>
+                )}
+
+                <button type="submit" className="btn btn-primary w-full mt-6" disabled={submitting}>
+                  {submitting ? 'Placing your order…' : `Place Order — ${formatCurrency(total)}`}
                 </button>
 
                 <p className="text-xs text-center mt-3" style={{ color: 'var(--color-muted)' }}>

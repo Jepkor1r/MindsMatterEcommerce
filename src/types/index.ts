@@ -90,6 +90,7 @@ export interface OrderItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
+  cover_image?: string; // Joined from products (may be missing if product was deleted)
 }
 
 export interface Payment {

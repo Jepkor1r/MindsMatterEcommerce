@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { useCart } from '../features/cart/CartContext';
+import { SHIPPING_FEE } from '../services/orders';
 import { formatCurrency } from '../utils/formatCurrency';
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, clearCart, subtotal } = useCart();
 
-  const shippingFee = subtotal > 0 ? 300 : 0; // KES 300 flat shipping
+  const shippingFee = subtotal > 0 ? SHIPPING_FEE : 0; // Flat shipping (display estimate)
   const total = subtotal + shippingFee;
 
   if (items.length === 0) {

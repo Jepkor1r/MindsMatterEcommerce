@@ -1,72 +1,80 @@
-import { Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Package } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft, CreditCard, Package } from 'lucide-react';
 import { formatCurrency } from '../utils/formatCurrency';
-
-// Mock order details for UI
-const mockOrder = {
-  id: 'order-1',
-  order_number: 'MM-20260920-0042',
-  date: '2026-09-20T14:30:00Z',
-  status: 'delivered',
-  payment_status: 'successful',
-  payment_method: 'M-Pesa',
-  subtotal: 2800,
-  shipping_fee: 300,
-  total: 3100,
-  shipping_address: '123 Kimathi Street, Nairobi, Kenya',
-  items: [
-    {
-      id: 'item-1',
-      product_name: '30 Days of Colour',
-      quantity: 2,
-      unit_price: 1000,
-      subtotal: 2000,
-      image: '/images/colouring-book-1.png',
-    },
-    {
-      id: 'item-2',
-      product_name: 'Daily Brain Teasers',
-      quantity: 1,
-      unit_price: 800,
-      subtotal: 800,
-      image: '/images/puzzle-book-1.png',
-    },
-  ],
-};
+import { fetchOrderById } from '../services/orders';
+import {
+  formatOrderDate,
+  orderStatusBadge,
+  paymentMethodLabel,
+  paymentStatusBadge,
+} from '../features/orders/orderLabels';
+import type { Order } from '../types';
 
 export default function OrderDetailsPage() {
+  const { id } = useParams<{ id: string }>();
+  // undefined = still loading, null = not found (or not this user's order)
+  const [order, setOrder] = useState<Order | null | undefined>(undefined);
 
-  // In Phase 5, we will read the order id from the URL (useParams) and fetch it.
-  // For now, we just use the mock data regardless of ID.
+  useEffect(() => {
+    if (id) fetchOrderById(id).then(setOrder);
+  }, [id]);
+
+  if (order === undefined) {
+    return (
+      <main className="container py-16 text-center" aria-busy="true">
+        <p style={{ color: 'var(--color-muted)' }}>Loading order…</p>
+      </main>
+    );
+  }
+
+  // RLS hides other people's orders, so "not yours" and "doesn't exist" look the same
+  if (order === null) {
+    return (
+      <main className="container py-16 text-center">
+        <Package size={48} className="mx-auto mb-4" style={{ color: 'var(--color-border)' }} />
+        <h1 className="mb-2" style={{ color: 'var(--color-primary)' }}>Order Not Found</h1>
+        <p className="mb-6" style={{ color: 'var(--color-muted)' }}>
+          We couldn't find this order in your account.
+        </p>
+        <Link to="/orders" className="btn btn-primary no-underline">
+          <ArrowLeft size={16} /> Back to My Orders
+        </Link>
+      </main>
+    );
+  }
+
+  const status = orderStatusBadge(order.status);
+  const payment = paymentStatusBadge(order.payment?.status);
 
   return (
     <main style={{ backgroundColor: 'var(--color-cream)' }}>
       <div className="container py-10">
-        <Link to="/account" className="inline-flex items-center gap-1 text-sm mb-6 no-underline" style={{ color: 'var(--color-muted)' }}>
+        <Link to="/orders" className="inline-flex items-center gap-1 text-sm mb-6 no-underline" style={{ color: 'var(--color-muted)' }}>
           <ArrowLeft size={14} /> Back to My Orders
         </Link>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl mb-1" style={{ color: 'var(--color-primary)' }}>
-              Order {mockOrder.order_number}
+              Order {order.order_number}
             </h1>
             <p style={{ color: 'var(--color-muted)' }}>
-              Placed on {new Date(mockOrder.date).toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              Placed on {formatOrderDate(order.created_at, true)}
             </p>
           </div>
           <div className="flex gap-2">
             <span
               className="px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1"
-              style={{ backgroundColor: 'var(--color-sage)', color: 'var(--color-white)' }}
+              style={{ backgroundColor: payment.backgroundColor, color: payment.color }}
             >
-              <CheckCircle size={14} /> {mockOrder.payment_status.toUpperCase()}
+              <CreditCard size={14} /> {payment.label}
             </span>
             <span
               className="px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1"
-              style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-charcoal)' }}
+              style={{ backgroundColor: status.backgroundColor, color: status.color }}
             >
-              <Package size={14} /> {mockOrder.status.toUpperCase()}
+              <Package size={14} /> {status.label}
             </span>
           </div>
         </div>
@@ -82,22 +90,26 @@ export default function OrderDetailsPage() {
                 Items Ordered
               </h2>
               <div className="space-y-4">
-                {mockOrder.items.map((item) => (
+                {(order.items ?? []).map((item) => (
                   <div key={item.id} className="flex gap-4 pb-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <img
-                      src={item.image}
-                      alt={item.product_name}
-                      className="w-16 h-16 rounded object-cover"
-                      style={{ backgroundColor: 'var(--color-blush)' }}
-                    />
+                    {item.cover_image ? (
+                      <img
+                        src={item.cover_image}
+                        alt={item.product_name}
+                        className="w-16 h-16 rounded object-cover"
+                        style={{ backgroundColor: 'var(--color-blush)' }}
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded" style={{ backgroundColor: 'var(--color-blush)' }} aria-hidden="true" />
+                    )}
                     <div className="flex-1">
                       <p className="font-semibold" style={{ color: 'var(--color-charcoal)' }}>{item.product_name}</p>
                       <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
-                        {formatCurrency(item.unit_price)} × {item.quantity}
+                        {formatCurrency(item.unit_price, order.currency)} × {item.quantity}
                       </p>
                     </div>
                     <div className="font-semibold" style={{ color: 'var(--color-primary)' }}>
-                      {formatCurrency(item.subtotal)}
+                      {formatCurrency(item.subtotal, order.currency)}
                     </div>
                   </div>
                 ))}
@@ -117,11 +129,11 @@ export default function OrderDetailsPage() {
               <div className="space-y-2 text-sm mb-4">
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--color-muted)' }}>Subtotal</span>
-                  <span className="font-semibold">{formatCurrency(mockOrder.subtotal)}</span>
+                  <span className="font-semibold">{formatCurrency(order.subtotal, order.currency)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--color-muted)' }}>Shipping</span>
-                  <span className="font-semibold">{formatCurrency(mockOrder.shipping_fee)}</span>
+                  <span className="font-semibold">{formatCurrency(order.shipping_fee, order.currency)}</span>
                 </div>
                 <div
                   className="flex justify-between pt-3 text-base"
@@ -129,7 +141,7 @@ export default function OrderDetailsPage() {
                 >
                   <span className="font-bold">Total</span>
                   <span className="font-bold" style={{ color: 'var(--color-primary)' }}>
-                    {formatCurrency(mockOrder.total)}
+                    {formatCurrency(order.total, order.currency)}
                   </span>
                 </div>
               </div>
@@ -142,11 +154,17 @@ export default function OrderDetailsPage() {
               <h2 className="text-lg mb-4" style={{ fontFamily: 'var(--font-heading)', color: 'var(--color-primary)' }}>
                 Delivery Details
               </h2>
-              <p className="text-sm mb-4" style={{ color: 'var(--color-charcoal)', whiteSpace: 'pre-line' }}>
-                {mockOrder.shipping_address}
+              <p className="text-sm mb-1 font-semibold" style={{ color: 'var(--color-charcoal)' }}>{order.customer_name}</p>
+              <p className="text-sm mb-4" style={{ color: 'var(--color-charcoal)' }}>
+                {order.shipping_address}<br />
+                {order.city}, {order.country}
+              </p>
+              <p className="text-sm mb-4" style={{ color: 'var(--color-muted)' }}>
+                {order.customer_phone}<br />
+                {order.customer_email}
               </p>
               <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--color-charcoal)' }}>Payment Method</h3>
-              <p className="text-sm" style={{ color: 'var(--color-muted)' }}>{mockOrder.payment_method}</p>
+              <p className="text-sm" style={{ color: 'var(--color-muted)' }}>{paymentMethodLabel(order.payment?.provider)}</p>
             </div>
           </div>
         </div>

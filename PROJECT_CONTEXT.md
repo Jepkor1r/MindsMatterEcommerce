@@ -1,6 +1,6 @@
 # Minds Matter - Project Context
 
-## Current Phase: Phase 4 (Authentication) complete — next: Phase 5 (Orders)
+## Current Phase: Phase 5 (Orders) complete — next: Phase 6 (Mailgun)
 
 ### Completed Features
 - **Phase 1: Planning**
@@ -11,7 +11,7 @@
   - Navbar, Footer, ProductCard
   - Home, Shop (category filter + search), Product Details, Cart, About
   - Cart Context with `localStorage` persistence
-  - Checkout UI with form validation (mock submit)
+  - Checkout UI with form validation
 - **Phase 3: Database (Supabase)**
   - `supabase/schema.sql`: profiles, categories, products, orders, order_items, payments, enums, `updated_at` triggers
   - Seeded 5 categories and 5 products (verified via REST API on 2026-10-02)
@@ -23,11 +23,18 @@
   - Done (code): `AuthContext`, `ProtectedRoute`, `/login` page, real Account page (name/email/logout), Navbar sign-in state, checkout requires sign-in and pre-fills name/email
   - `supabase/auth.sql` run in Supabase (profiles trigger + RLS on private tables)
 
+- **Phase 5: Orders**
+  - `supabase/orders.sql`: `create_order()` (SECURITY DEFINER; recalculates prices from `products`, validates input,
+    checks stock without reducing it, sequential order numbers `MM-YYYYMMDD-NNNN`, creates a pending `payments` row),
+    `get_shipping_fee()` = KES 300 flat. Run in Supabase (verified live: get_shipping_fee returns 300, anon gets permission denied on create_order).
+  - `src/services/orders.ts`: `createOrder`, `fetchMyOrders`, `fetchOrderById`
+  - Checkout saves real orders; `/account` and new `/orders` show real history; `/orders/:id` shows real details
+  - Decisions: Postgres function (no separate backend yet); flat KES 300 shipping; stock is reduced at payment confirmation (Phase 7), only checked at order time
+
 ### Features in Progress
 - None
 
 ### Remaining Features
-- **Phase 5:** Real order creation (server-side totals), order history, order details from Supabase
 - **Phase 6:** Mailgun email notifications
 - **Phase 7:** M-Pesa and International Payment integration
 - **Phase 8:** Comprehensive Testing
@@ -54,15 +61,23 @@
   session survives refresh and browser restart, logout, protected routes redirect to /login,
   checkout requires sign-in and returns to checkout with name/email pre-filled
 
+- ✅ Local Postgres 16 test of all SQL files (2026-10-02, fake auth schema): fake browser price ignored
+  (charged 4800 not 3), duplicate cart lines merged, stock/unknown/zero-qty/empty/bad-phone/not-signed-in
+  rejected with nothing saved, anon cannot call create_order, users cannot see others' orders/items/payments/profiles,
+  direct insert into orders blocked by RLS, users cannot update order/payment status or product prices
+- ✅ Phase 5 manual app tests (reported by user, 2026-10-02): order placed with correct server total (KES 2,300),
+  rows in orders/order_items/payments, order details page, history on /account and /orders, out-of-stock
+  message, order still visible after logout + browser restart + re-login, unknown order id shows "Order Not Found"
+
 ### Deployment Status
 - Not deployed.
 
 ### Bugs / Known Issues
-- Checkout still fakes order placement (random order number, nothing saved) — Phase 5
-- Shipping fee (300) hardcoded client-side — move server-side in Phase 5
+- Shipping fee shown in cart/checkout (`SHIPPING_FEE` in services/orders.ts) must be kept in sync with `get_shipping_fee()` — display only
+- Orders stay `pending` / awaiting payment until Phase 7
 - `src/data/mockData.ts` is unused
 - Only 5 of 6 categories seeded ("Digital / Printables" missing); Drawing & Kids have no products
 - Lint warnings: Footer `new Date()` in render, ProductPage setState in effect
 
 ### Next Action
-Start Phase 5 (Orders): explain the server-side order creation approach and get approval before coding.
+Start Phase 6 (Mailgun): explain the email architecture and get approval + Mailgun setup before coding.
