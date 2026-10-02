@@ -1,6 +1,6 @@
 # Minds Matter - Project Context
 
-## Current Phase: Phase 5 (Orders) complete — next: Phase 6 (Mailgun)
+## Current Phase: Phase 6 (Mailgun) — code written, awaiting Supabase setup + testing
 
 ### Completed Features
 - **Phase 1: Planning**
@@ -32,10 +32,18 @@
   - Decisions: Postgres function (no separate backend yet); flat KES 300 shipping; stock is reduced at payment confirmation (Phase 7), only checked at order time
 
 ### Features in Progress
-- None
+- **Phase 6: Mailgun**
+  - Decisions: Supabase Edge Functions for server code (also planned for the M-Pesa callback in Phase 7);
+    send an "Order received" email now (shows Awaiting payment), add "Payment confirmed" email in Phase 7
+  - `supabase/emails.sql`: `order_emails` log table (UNIQUE order_id+email_type, RLS on with no policies = server-only)
+  - `supabase/functions/send-order-email`: verifies caller's JWT, loads order only if it belongs to them, claims the
+    email row (no duplicates; failed or stuck rows can be retried), sends via Mailgun, records sent/failed.
+    Email failure never changes order/payment status.
+  - `supabase/functions/_shared/`: `mailgun.ts`, `orderEmail.ts` (branded HTML + text, escapes customer input), `cors.ts`
+  - Checkout calls the function after the order is saved and shows sending/sent/failed honestly
+  - Pending: run `emails.sql`, set Edge Function secrets, deploy function, test real delivery
 
 ### Remaining Features
-- **Phase 6:** Mailgun email notifications
 - **Phase 7:** M-Pesa and International Payment integration
 - **Phase 8:** Comprehensive Testing
 - **Phase 9:** Deployment to Vercel (add production URL to Google + Supabase, publish OAuth app)
@@ -48,9 +56,13 @@
   - Redirect URI: `https://kadmivkopczboezrbrks.supabase.co/auth/v1/callback`
 - Supabase URL Configuration: Site URL `http://localhost:5173`, redirect `http://localhost:5173/**`
 
+- **Mailgun:** account created (US region), sandbox domain, test recipient verified
+  - Sandbox can only send to authorized recipients — need a real domain before launch (Phase 9)
+
 ### Environment Configuration
 - `.env.local` (git-ignored): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - Google credentials live only in the Supabase dashboard
+- Mailgun secrets will live only in Supabase Edge Function secrets
 
 ### Tests Completed
 - `npm run build` passes
@@ -69,6 +81,11 @@
   rows in orders/order_items/payments, order details page, history on /account and /orders, out-of-stock
   message, order still visible after logout + browser restart + re-login, unknown order id shows "Order Not Found"
 
+- ✅ Phase 6 local checks (2026-10-03): Edge Function passes `deno check`; sample email rendered in headless
+  Chrome (layout, amounts, Nairobi date, brand message OK; `<script>` in customer name is escaped);
+  `emails.sql` loads and re-runs on local Postgres, duplicate email rows blocked, browser role sees no rows
+- ⏳ Real Mailgun delivery: NOT yet tested
+
 ### Deployment Status
 - Not deployed.
 
@@ -80,4 +97,4 @@
 - Lint warnings: Footer `new Date()` in render, ProductPage setState in effect
 
 ### Next Action
-Start Phase 6 (Mailgun): explain the email architecture and get approval + Mailgun setup before coding.
+Run `supabase/emails.sql`, set Edge Function secrets, deploy `send-order-email`, place a test order and confirm the email arrives.

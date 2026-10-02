@@ -1,0 +1,7 @@
+# Supabase CLI configuration (only the settings we use).
+# project_id is the public project reference, not a secret.
+project_id = "kadmivkopczboezrbrks"
+
+[functions.send-order-email]
+# Only signed-in users (with a valid login token) can call this function.
+verify_jwt = true

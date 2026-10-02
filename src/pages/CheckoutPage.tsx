@@ -3,7 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, CreditCard, Phone } from 'lucide-react';
 import { useCart } from '../features/cart/CartContext';
 import { useAuth } from '../features/auth/AuthContext';
-import { createOrder, SHIPPING_FEE, type CreatedOrder } from '../services/orders';
+import {
+  createOrder,
+  sendOrderConfirmationEmail,
+  SHIPPING_FEE,
+  type CreatedOrder,
+  type EmailStatus,
+} from '../services/orders';
 import { formatCurrency } from '../utils/formatCurrency';
 import type { CheckoutFormData } from '../types';
 
@@ -14,6 +20,7 @@ export default function CheckoutPage() {
   const [placedOrder, setPlacedOrder] = useState<CreatedOrder | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [emailStatus, setEmailStatus] = useState<EmailStatus | 'sending'>('sending');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState<CheckoutFormData>({
@@ -74,6 +81,9 @@ export default function CheckoutPage() {
     // Order is saved in Supabase — now it's safe to empty the cart
     setPlacedOrder(order);
     clearCart();
+
+    // Send the confirmation email in the background — the order is already safe
+    sendOrderConfirmationEmail(order.id).then(setEmailStatus);
   }
 
   if (items.length === 0 && !placedOrder) {
@@ -102,8 +112,14 @@ export default function CheckoutPage() {
         <p className="mb-1" style={{ color: 'var(--color-charcoal)' }}>
           Total: <strong>{formatCurrency(placedOrder.total)}</strong>
         </p>
-        <p className="mb-6" style={{ color: 'var(--color-muted)' }}>
+        <p className="mb-2" style={{ color: 'var(--color-muted)' }}>
           Your order has been saved. Payment status: awaiting payment.
+        </p>
+        <p className="mb-6 text-sm" role="status" style={{ color: 'var(--color-muted)' }}>
+          {emailStatus === 'sending' && `Sending a confirmation email to ${form.customer_email}…`}
+          {emailStatus === 'sent' && `A confirmation email has been sent to ${form.customer_email}.`}
+          {emailStatus === 'failed' &&
+            "We couldn't send your confirmation email right now, but your order is saved and you can view it in My Orders."}
         </p>
         <p className="text-sm italic mb-8" style={{ color: 'var(--color-secondary)' }}>
           Thank you for choosing to slow down, create, and reconnect.

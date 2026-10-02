@@ -38,6 +38,11 @@ supabase/       SQL run manually in the Supabase SQL Editor
   policies.sql  RLS for categories/products + re-seed
   auth.sql      profiles trigger + RLS for profiles/orders/order_items/payments
   orders.sql    create_order() + get_shipping_fee() + order number sequence
+  emails.sql    order_emails log table (server-only)
+  config.toml   Supabase CLI config (project ref, function settings)
+  functions/    Supabase Edge Functions (Deno) — server-side code with secrets
+    _shared/    mailgun.ts, orderEmail.ts, cors.ts (reused by later functions)
+    send-order-email/
 ```
 
 ## Coding Conventions
@@ -51,6 +56,12 @@ supabase/       SQL run manually in the Supabase SQL Editor
 - **Only public values may start with `VITE_`** — Vite puts every `VITE_` variable in the public browser bundle.
 - Current: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
 - Google Client ID/Secret are stored ONLY in the Supabase dashboard, never in this repo.
+
+## Email Architecture
+- Browser → `supabase.functions.invoke('send-order-email', { order_id })` → Edge Function checks JWT + ownership → Mailgun.
+- Mailgun secrets are Edge Function secrets only. Email HTML uses inline hex colours (email clients can't read CSS variables) — keep in sync with `index.css`.
+- Every send is logged in `order_emails`; failures are recorded and retryable and never change order/payment status.
+- Deploy: `npx supabase functions deploy send-order-email --project-ref kadmivkopczboezrbrks`
 
 ## Security Rules
 - **NEVER** invent API keys, client secrets, or credentials.
@@ -75,7 +86,7 @@ See `PROJECT_CONTEXT.md` for the detailed, up-to-date status.
 - **Completed:** Phase 1 (Planning, partial — no PRD.md), Phase 2 (UI), Phase 3 (Database, products/categories live).
 - **Completed:** Phase 4 (Authentication, Google sign-in tested manually).
 - **Completed:** Phase 5 (Orders) — orders are created ONLY via the `create_order()` Postgres function (supabase/orders.sql).
-- **Next:** Phase 6 (Mailgun).
+- **In progress:** Phase 6 (Mailgun) via Supabase Edge Function `send-order-email`.
 
 ## Known Issues
 - `PRD.md` was never created. `README.md` is still the Vite template.

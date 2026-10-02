@@ -94,3 +94,26 @@ export async function fetchOrderById(id: string): Promise<Order | null> {
   }
   return data ? toOrder(data) : null;
 }
+
+export type EmailStatus = 'sent' | 'failed';
+
+/**
+ * Ask our server-side Edge Function (supabase/functions/send-order-email)
+ * to email the order confirmation. The browser never sees the Mailgun key —
+ * it only sends the order id plus the user's login token.
+ *
+ * If this fails, the order is still safely saved; the failure is recorded
+ * server-side so the email can be retried.
+ */
+export async function sendOrderConfirmationEmail(orderId: string): Promise<EmailStatus> {
+  const { data, error } = await supabase.functions.invoke('send-order-email', {
+    body: { order_id: orderId },
+  });
+
+  if (error) {
+    console.error('Error sending confirmation email:', error);
+    return 'failed';
+  }
+  // 'already_sent' counts as sent — the customer has their email
+  return data?.status === 'sent' || data?.status === 'already_sent' ? 'sent' : 'failed';
+}
