@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, Search, ShoppingBag, User, X } from 'lucide-react';
 import { useCart } from '../../features/cart/CartContext';
+import { useAuth } from '../../features/auth/AuthContext';
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { itemCount } = useCart();
+  const { user } = useAuth();
   const location = useLocation();
 
   function handleSearch(e: React.FormEvent) {
@@ -80,9 +82,20 @@ export default function Navbar() {
             <Search size={20} />
           </button>
 
-          {/* Account */}
-          <Link to="/account" className="btn-ghost p-2 rounded-full no-underline" aria-label="Account">
+          {/* Account — goes to sign-in when signed out */}
+          <Link
+            to={user ? '/account' : '/login'}
+            className="btn-ghost p-2 rounded-full relative no-underline"
+            aria-label={user ? 'My account' : 'Sign in'}
+          >
             <User size={20} style={{ color: 'var(--color-charcoal)' }} />
+            {user && (
+              <span
+                className="absolute bottom-1 right-1 w-2 h-2 rounded-full"
+                style={{ backgroundColor: 'var(--color-sage)' }}
+                aria-hidden="true"
+              />
+            )}
           </Link>
 
           {/* Cart */}

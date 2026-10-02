@@ -2,19 +2,22 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, CreditCard, Phone } from 'lucide-react';
 import { useCart } from '../features/cart/CartContext';
+import { useAuth } from '../features/auth/AuthContext';
 import { formatCurrency } from '../utils/formatCurrency';
 import type { CheckoutFormData } from '../types';
 
 export default function CheckoutPage() {
   const { items, subtotal, clearCart } = useCart();
   const navigate = useNavigate();
+  const { user } = useAuth(); // Checkout is a protected route, so user is signed in
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [form, setForm] = useState<CheckoutFormData>({
-    customer_name: '',
-    customer_email: '',
+    // Pre-fill from the Google account; the customer can still edit these
+    customer_name: user?.user_metadata?.full_name ?? '',
+    customer_email: user?.email ?? '',
     customer_phone: '',
     shipping_address: '',
     city: '',

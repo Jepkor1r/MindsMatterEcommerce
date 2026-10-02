@@ -1,36 +1,17 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, Package } from 'lucide-react';
-import { formatCurrency } from '../utils/formatCurrency';
-
-// Mock order data for UI (will be replaced by Supabase data in Phase 3)
-const mockOrders = [
-  {
-    id: 'order-1',
-    order_number: 'MM-20260920-0042',
-    date: '2026-09-20T14:30:00Z',
-    status: 'delivered',
-    payment_status: 'successful',
-    total: 3100,
-    items: 2,
-  },
-  {
-    id: 'order-2',
-    order_number: 'MM-20261001-0089',
-    date: '2026-10-01T09:15:00Z',
-    status: 'processing',
-    payment_status: 'successful',
-    total: 1500,
-    items: 1,
-  },
-];
+import { useAuth } from '../features/auth/AuthContext';
 
 export default function AccountPage() {
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
-  // Mock logout handler
-  function handleLogout() {
-    // In Phase 4, this will call Supabase Auth
-    alert('Logged out successfully (Mock)');
+  // Google gives us the name and email; fall back gracefully if missing
+  const fullName = user?.user_metadata?.full_name ?? 'Minds Matter customer';
+  const email = user?.email ?? '';
+
+  async function handleLogout() {
+    await signOut();
     navigate('/');
   }
 
@@ -51,11 +32,11 @@ export default function AccountPage() {
                   className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold"
                   style={{ backgroundColor: 'var(--color-blush)', color: 'var(--color-primary)' }}
                 >
-                  J
+                  {fullName.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <p className="font-semibold" style={{ color: 'var(--color-charcoal)' }}>Jane Wanjiku</p>
-                  <p className="text-xs" style={{ color: 'var(--color-muted)' }}>jane@example.com</p>
+                  <p className="font-semibold" style={{ color: 'var(--color-charcoal)' }}>{fullName}</p>
+                  <p className="text-xs break-all" style={{ color: 'var(--color-muted)' }}>{email}</p>
                 </div>
               </div>
 
@@ -88,54 +69,14 @@ export default function AccountPage() {
                 Order History
               </h2>
 
-              {mockOrders.length > 0 ? (
-                <div className="space-y-4">
-                  {mockOrders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="p-4 rounded-lg border flex flex-col md:flex-row md:items-center justify-between gap-4"
-                      style={{ borderColor: 'var(--color-border)' }}
-                    >
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold" style={{ color: 'var(--color-charcoal)' }}>
-                            {order.order_number}
-                          </span>
-                          <span
-                            className="text-xs px-2 py-0.5 rounded-full font-medium"
-                            style={{
-                              backgroundColor: order.status === 'delivered' ? 'var(--color-sage)' : 'var(--color-accent)',
-                              color: order.status === 'delivered' ? 'var(--color-white)' : 'var(--color-charcoal)',
-                            }}
-                          >
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                          </span>
-                        </div>
-                        <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
-                          {new Date(order.date).toLocaleDateString()} • {order.items} item{order.items !== 1 ? 's' : ''}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between md:justify-end gap-6 w-full md:w-auto">
-                        <span className="font-bold" style={{ color: 'var(--color-primary)' }}>
-                          {formatCurrency(order.total)}
-                        </span>
-                        <Link to={`/account/orders/${order.id}`} className="btn btn-sm btn-outline no-underline">
-                          View Details
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-10">
-                  <Package size={48} className="mx-auto mb-4" style={{ color: 'var(--color-border)' }} />
-                  <p className="mb-4" style={{ color: 'var(--color-charcoal)' }}>You haven't placed any orders yet.</p>
-                  <Link to="/shop" className="btn btn-primary no-underline">
-                    Start Shopping
-                  </Link>
-                </div>
-              )}
+              {/* Real orders are loaded from Supabase in Phase 5 */}
+              <div className="text-center py-10">
+                <Package size={48} className="mx-auto mb-4" style={{ color: 'var(--color-border)' }} />
+                <p className="mb-4" style={{ color: 'var(--color-charcoal)' }}>You haven't placed any orders yet.</p>
+                <Link to="/shop" className="btn btn-primary no-underline">
+                  Start Shopping
+                </Link>
+              </div>
             </div>
           </div>
         </div>
