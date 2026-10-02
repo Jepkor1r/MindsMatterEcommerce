@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, Brush, Gift, Puzzle, Sparkles, Star } from 'lucide-react';
+import { ArrowRight, BookOpen, Brush, Gift, Sparkles, Star } from 'lucide-react';
 import { fetchCategories, fetchFeaturedProducts } from '../services/api';
 import type { Category, Product } from '../types';
 import ProductCard from '../components/product/ProductCard';

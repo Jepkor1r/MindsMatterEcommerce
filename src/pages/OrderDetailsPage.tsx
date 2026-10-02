@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, Package } from 'lucide-react';
 import { formatCurrency } from '../utils/formatCurrency';
 
@@ -35,9 +35,8 @@ const mockOrder = {
 };
 
 export default function OrderDetailsPage() {
-  const { id } = useParams<{ id: string }>();
 
-  // In Phase 5, we would fetch the actual order by ID here.
+  // In Phase 5, we will read the order id from the URL (useParams) and fetch it.
   // For now, we just use the mock data regardless of ID.
 
   return (

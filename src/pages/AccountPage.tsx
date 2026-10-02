@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, Package, User } from 'lucide-react';
+import { LogOut, Package } from 'lucide-react';
 import { formatCurrency } from '../utils/formatCurrency';
 
 // Mock order data for UI (will be replaced by Supabase data in Phase 3)
