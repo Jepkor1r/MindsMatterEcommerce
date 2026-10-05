@@ -31,6 +31,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean; // true until we know whether someone is signed in
   signInWithGoogle: (returnTo?: string) => Promise<string | null>;
+  signInWithEmail: (email: string, password: string) => Promise<string | null>;
+  signUpWithEmail: (fullName: string, email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
 }
 
@@ -78,6 +80,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   }
 
+  /**
+   * Sign in with email + password (the same accounts work in the mobile app).
+   * Returns an error message, or null on success.
+   */
+  async function signInWithEmail(email: string, password: string): Promise<string | null> {
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) {
+      console.error('Email sign-in failed:', error);
+      if (error.message.toLowerCase().includes('invalid login credentials')) {
+        return 'Wrong email or password. Please try again.';
+      }
+      if (error.message.toLowerCase().includes('email not confirmed')) {
+        return 'Please confirm your email address first (check your inbox).';
+      }
+      return error.message;
+    }
+    return null;
+  }
+
+  /**
+   * Create a new account with email + password.
+   * The full name is saved on the account and copied into `profiles` by the
+   * on_auth_user_created trigger. Returns an error message, or null on success.
+   */
+  async function signUpWithEmail(
+    fullName: string,
+    email: string,
+    password: string
+  ): Promise<string | null> {
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: { data: { full_name: fullName.trim() } },
+    });
+    if (error) {
+      console.error('Sign-up failed:', error);
+      return error.message;
+    }
+    // If "Confirm email" is switched on in Supabase, there is no session yet
+    if (!data.session) {
+      return 'Account created. Please check your email to confirm it, then sign in.';
+    }
+    return null;
+  }
+
   async function signOut() {
     const { error } = await supabase.auth.signOut();
     if (error) console.error('Sign-out error:', error);
@@ -86,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut }}>
       {children}
     </AuthContext.Provider>
   );

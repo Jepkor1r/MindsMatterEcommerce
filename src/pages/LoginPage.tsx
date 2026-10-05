@@ -18,10 +18,17 @@ function getErrorFromUrl(): string | null {
 }
 
 export default function LoginPage() {
-  const { user, loading, signInWithGoogle } = useAuth();
+  const { user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
   const location = useLocation();
   const [error, setError] = useState<string | null>(getErrorFromUrl);
   const [redirecting, setRedirecting] = useState(false);
+
+  // Email + password form
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   // Page the user was trying to reach before being sent here
   const from = (location.state as { from?: string } | null)?.from;
@@ -41,6 +48,27 @@ export default function LoginPage() {
       setError(message);
       setRedirecting(false);
     }
+  }
+
+  async function handleEmailSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (mode === 'signup' && !fullName.trim()) {
+      setError('Please enter your name.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    setSubmitting(true);
+    const message =
+      mode === 'signup'
+        ? await signUpWithEmail(fullName, email, password)
+        : await signInWithEmail(email, password);
+    setSubmitting(false);
+    // On success the user is set and the redirect above happens automatically
+    if (message) setError(message);
   }
 
   return (
@@ -65,9 +93,73 @@ export default function LoginPage() {
             </p>
           )}
 
+          <form onSubmit={handleEmailSubmit} className="space-y-4 text-left" noValidate>
+            {mode === 'signup' && (
+              <div>
+                <label htmlFor="full_name">Full name</label>
+                <input
+                  id="full_name"
+                  className="input"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  autoComplete="name"
+                  placeholder="e.g. Jane Wanjiku"
+                />
+              </div>
+            )}
+            <div>
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                className="input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                placeholder="jane@example.com"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                className="input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                placeholder="At least 6 characters"
+                required
+              />
+            </div>
+            <button type="submit" className="btn btn-primary w-full" disabled={loading || submitting}>
+              {submitting ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in'}
+            </button>
+          </form>
+
+          <p className="mt-4 text-sm" style={{ color: 'var(--color-muted)' }}>
+            {mode === 'signup' ? 'Already have an account?' : 'New here?'}{' '}
+            <button
+              type="button"
+              className="font-semibold underline"
+              style={{ color: 'var(--color-primary)' }}
+              onClick={() => {
+                setMode(mode === 'signup' ? 'signin' : 'signup');
+                setError(null);
+              }}
+            >
+              {mode === 'signup' ? 'Sign in' : 'Create an account'}
+            </button>
+          </p>
+
+          <p className="my-6 text-xs uppercase tracking-wide" style={{ color: 'var(--color-muted)' }}>
+            or
+          </p>
+
           <button
             type="button"
-            className="btn btn-primary w-full"
+            className="btn btn-secondary w-full"
             onClick={handleGoogleSignIn}
             disabled={loading || redirecting}
           >

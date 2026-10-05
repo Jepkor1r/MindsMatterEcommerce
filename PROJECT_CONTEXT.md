@@ -43,6 +43,13 @@
   - Checkout calls the function after the order is saved and shows sending/sent/failed honestly
   - Pending: run `emails.sql`, set Edge Function secrets, deploy function, test real delivery
 
+- **Mobile app + cart sync (Lesson 2 assignment)**
+  - `supabase/cart.sql`: `cart_items` (PK user_id+product_id, qty 1–99, RLS own rows only, anon no access) +
+    `add_to_cart()` (SECURITY INVOKER, adds to existing qty, capped at stock). Tested on local Postgres 16 (2026-10-05).
+  - Web cart: localStorage when signed out; Supabase when signed in; guest cart merged on sign-in; re-loads on tab focus
+  - Email + password sign-in/sign-up added to `/login` (Google kept). Requires "Confirm email" OFF in Supabase.
+  - Next: Expo app in `mobile/` using the same Supabase project
+
 ### Remaining Features
 - **Phase 7:** M-Pesa and International Payment integration
 - **Phase 8:** Comprehensive Testing

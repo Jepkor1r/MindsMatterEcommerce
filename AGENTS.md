@@ -29,7 +29,7 @@ src/
   features/     auth/ (AuthContext, ProtectedRoute), cart/ (CartContext)
   lib/          supabase.ts — the single Supabase client
   pages/        one file per route
-  services/     api.ts — Supabase queries (categories, products)
+  services/     api.ts — Supabase queries (categories, products); cart.ts — cart_items queries
   types/        shared TypeScript interfaces
   utils/        formatCurrency
   data/         mockData.ts — UNUSED legacy mock data, safe to delete
@@ -39,6 +39,7 @@ supabase/       SQL run manually in the Supabase SQL Editor
   auth.sql      profiles trigger + RLS for profiles/orders/order_items/payments
   orders.sql    create_order() + get_shipping_fee() + order number sequence
   emails.sql    order_emails log table (server-only)
+  cart.sql      cart_items table (per-user cart, RLS) + add_to_cart() — shared by web + mobile
   config.toml   Supabase CLI config (project ref, function settings)
   functions/    Supabase Edge Functions (Deno) — server-side code with secrets
     _shared/    mailgun.ts, orderEmail.ts, cors.ts (reused by later functions)
@@ -48,7 +49,7 @@ supabase/       SQL run manually in the Supabase SQL Editor
 ## Coding Conventions
 - **Feature-First Architecture:** Group files by feature (e.g., `src/features/cart`).
 - **Design Tokens:** Always use CSS variables (e.g., `var(--color-primary)`) from `index.css`, never hardcode hex colors in React components.
-- **State Management:** React Context + `localStorage` for non-critical state (cart). Supabase for persistent critical data (orders, users).
+- **State Management:** React Context. Cart: `localStorage` when signed out; Supabase `cart_items` when signed in (merged on sign-in, re-loaded on tab focus) so it syncs with the mobile app. Supabase for persistent critical data (orders, users).
 - `npm run build` must pass (it runs `tsc -b`; unused imports/variables are errors).
 
 ## Environment Variables
@@ -70,8 +71,9 @@ supabase/       SQL run manually in the Supabase SQL Editor
 - Every private table must have RLS enabled. The browser has read-only access to its own orders; orders will be written by trusted server-side code (Phase 5).
 
 ## Authentication Architecture
+- Email + password (`signInWithPassword` / `signUp`, "Confirm email" OFF in Supabase) — the same accounts are used by the mobile app.
 - Browser → `supabase.auth.signInWithOAuth({ provider: 'google' })` → Google → `https://<project>.supabase.co/auth/v1/callback` → back to `/login` → redirect to the page the user wanted.
-- `AuthContext` exposes `user`, `loading`, `signInWithGoogle`, `signOut`. The session is persisted in localStorage by supabase-js.
+- `AuthContext` exposes `user`, `loading`, `signInWithGoogle`, `signInWithEmail`, `signUpWithEmail`, `signOut`. The session is persisted in localStorage by supabase-js.
 - `ProtectedRoute` guards `/checkout`, `/account`, `/account/orders/:id` (UI only — RLS is the real protection).
 - DB trigger `on_auth_user_created` creates a `profiles` row on first sign-in.
 
@@ -87,6 +89,7 @@ See `PROJECT_CONTEXT.md` for the detailed, up-to-date status.
 - **Completed:** Phase 4 (Authentication, Google sign-in tested manually).
 - **Completed:** Phase 5 (Orders) — orders are created ONLY via the `create_order()` Postgres function (supabase/orders.sql).
 - **In progress:** Phase 6 (Mailgun) via Supabase Edge Function `send-order-email`.
+- **In progress:** Mobile app (Expo, `mobile/`) sharing the same Supabase auth + `cart_items` cart.
 
 ## Known Issues
 - `PRD.md` was never created. `README.md` is still the Vite template.
