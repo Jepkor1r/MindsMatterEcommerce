@@ -23,3 +23,16 @@ dist-ssr
 *.sln
 *.sw?
 supabase/.temp/
+
+# Environment files (secrets/config) — only the .env.example templates are committed
+.env
+.env.*
+!.env.example
+
+# Expo / mobile build output and signing credentials
+.expo/
+*.apk
+*.aab
+*.jks
+*.keystore
+credentials.json

@@ -33,6 +33,8 @@ src/
   types/        shared TypeScript interfaces
   utils/        formatCurrency
   data/         mockData.ts — UNUSED legacy mock data, safe to delete
+mobile/         Expo (SDK 57) + Expo Router Android app — same Supabase project, email/password auth,
+                cart_items cart. Own package.json, .env (EXPO_PUBLIC_*), and mobile/AGENTS.md
 supabase/       SQL run manually in the Supabase SQL Editor
   schema.sql    tables, enums, triggers, seed data
   policies.sql  RLS for categories/products + re-seed

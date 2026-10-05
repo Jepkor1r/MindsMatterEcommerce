@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Minds Matter",
+    "slug": "minds-matter",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jepkor.mindsmatter"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#4A2545",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.jepkor.mindsmatter"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-sqlite"
+    ],
+    "scheme": "mindsmatter",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8b3c87cb-e38b-473b-ae32-9d4bce94bf49"
+      }
+    },
+    "owner": "jdevops"
+  }
+}

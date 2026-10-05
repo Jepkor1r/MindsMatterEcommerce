@@ -48,7 +48,9 @@
     `add_to_cart()` (SECURITY INVOKER, adds to existing qty, capped at stock). Tested on local Postgres 16 (2026-10-05).
   - Web cart: localStorage when signed out; Supabase when signed in; guest cart merged on sign-in; re-loads on tab focus
   - Email + password sign-in/sign-up added to `/login` (Google kept). Requires "Confirm email" OFF in Supabase.
-  - Next: Expo app in `mobile/` using the same Supabase project
+  - `mobile/`: Expo SDK 57 app (Login/Sign up, Shop, Cart with refetch on focus + pull-to-refresh, Logout),
+    package `com.jepkor.mindsmatter`. Typecheck, expo-doctor and Android bundle export pass (2026-10-05).
+  - Next: test in Expo Go on a phone, EAS APK build, README, demo video
 
 ### Remaining Features
 - **Phase 7:** M-Pesa and International Payment integration
